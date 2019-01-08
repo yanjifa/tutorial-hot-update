@@ -260,8 +260,9 @@ cc.Class({
             default:
                 return;
         }
-        
-        this._am.setEventCallback(null);
+
+        // this._am.setEventCallback(null);
+        cc.eventManager.removeListener(this._checkListener);
         this._checkListener = null;
         this._updating = false;
     },
@@ -318,13 +319,15 @@ cc.Class({
         }
 
         if (failed) {
-            this._am.setEventCallback(null);
+            // this._am.setEventCallback(null);
+            cc.eventManager.removeListener(this._checkListener);
             this._updateListener = null;
             this._updating = false;
         }
 
         if (needRestart) {
-            this._am.setEventCallback(null);
+            // this._am.setEventCallback(null);
+            cc.eventManager.removeListener(this._checkListener);
             this._updateListener = null;
             // Prepend the manifest's search path
             var searchPaths = jsb.fileUtils.getSearchPaths();
@@ -349,17 +352,17 @@ cc.Class({
             this.panel.info.string = 'Using custom manifest';
         }
     },
-    
+
     retry: function () {
         if (!this._updating && this._canRetry) {
             this.panel.retryBtn.active = false;
             this._canRetry = false;
-            
+
             this.panel.info.string = 'Retry failed Assets...';
             this._am.downloadFailedAssets();
         }
     },
-    
+
     checkUpdate: function () {
         if (this._updating) {
             this.panel.info.string = 'Checking or updating ...';
@@ -368,8 +371,10 @@ cc.Class({
         if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {
             // Resolve md5 url
             var url = this.manifestUrl.nativeUrl;
+            cc.log("check nativeUrl is :",url);
             if (cc.loader.md5Pipe) {
                 url = cc.loader.md5Pipe.transformURL(url);
+                cc.log("check url is :",url);
             }
             this._am.loadLocalManifest(url);
         }
@@ -377,7 +382,9 @@ cc.Class({
             this.panel.info.string = 'Failed to load local manifest ...';
             return;
         }
-        this._am.setEventCallback(this.checkCb.bind(this));
+        this._checkListener = new jsb.EventListenerAssetsManager(this._am, this.checkCb.bind(this));
+        cc.eventManager.addListener(this._checkListener, 1);
+        // this._am.setEventCallback(this.checkCb.bind(this));
 
         this._am.checkUpdate();
         this._updating = true;
@@ -385,13 +392,17 @@ cc.Class({
 
     hotUpdate: function () {
         if (this._am && !this._updating) {
-            this._am.setEventCallback(this.updateCb.bind(this));
+            // this._am.setEventCallback(this.updateCb.bind(this));
+            this._updateListener = new jsb.EventListenerAssetsManager(this._am, this.updateCb.bind(this));
+            cc.eventManager.addListener(this._updateListener, 1);
+
 
             if (this._am.getState() === jsb.AssetsManager.State.UNINITED) {
                 // Resolve md5 url
                 var url = this.manifestUrl.nativeUrl;
                 if (cc.loader.md5Pipe) {
                     url = cc.loader.md5Pipe.transformURL(url);
+                    cc.log("update url is :",url);
                 }
                 this._am.loadLocalManifest(url);
             }
@@ -402,7 +413,7 @@ cc.Class({
             this._updating = true;
         }
     },
-    
+
     show: function () {
         if (this.updateUI.active === false) {
             this.updateUI.active = true;
@@ -477,14 +488,15 @@ cc.Class({
             this._am.setMaxConcurrentTask(2);
             this.panel.info.string = "Max concurrent tasks count have been limited to 2";
         }
-        
+
         this.panel.fileProgress.progress = 0;
         this.panel.byteProgress.progress = 0;
     },
 
     onDestroy: function () {
         if (this._updateListener) {
-            this._am.setEventCallback(null);
+            // this._am.setEventCallback(null);
+            cc.eventManager.removeListener(this._checkListener);
             this._updateListener = null;
         }
     }

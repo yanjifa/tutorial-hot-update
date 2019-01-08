@@ -1,3 +1,11 @@
+# 尝试记录 Cocos Creator 1.10.2
+## 使用 local-web-server@2.6.0
+**npm install local-web-server**
+项目父目录执行命令 **ws -p 5555** 在本地5555端口开启一个web-server
+构建mac项目, 调试模式
+检查更新报错: this._am.setEventCallback' is undefined
+
+
 # 资源热更新教程
 
 ## 前言
